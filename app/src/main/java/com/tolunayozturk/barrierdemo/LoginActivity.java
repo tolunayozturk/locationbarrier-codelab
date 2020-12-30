@@ -12,6 +12,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.huawei.agconnect.auth.AGConnectAuth;
+import com.huawei.agconnect.auth.AGConnectUser;
 import com.huawei.hmf.tasks.Task;
 import com.huawei.hms.analytics.HiAnalytics;
 import com.huawei.hms.analytics.HiAnalyticsInstance;
@@ -31,6 +33,8 @@ public class LoginActivity extends AppCompatActivity {
     private AccountAuthService mAuthService;
     private AccountAuthParams mAuthParams;
     HiAnalyticsInstance mHiAnalytics;
+    AGConnectUser mAGConnectUser;
+    CloudDBHelper mCloudDBHelper;
 
     HuaweiIdAuthButton huaweiIdAuthButton;
 
@@ -43,6 +47,22 @@ public class LoginActivity extends AppCompatActivity {
 
         HiAnalyticsTools.enableLog();
         mHiAnalytics = HiAnalytics.getInstance(this);
+
+        mCloudDBHelper = CloudDBHelper.getInstance(this);
+
+        // Anonymous sign-in for CloudDB
+        mAGConnectUser = AGConnectAuth.getInstance().getCurrentUser();
+        if (mAGConnectUser != null) {
+            Log.i(TAG, "signIn via AuthService success " + mAGConnectUser.getUid());
+            mCloudDBHelper.openCloudDbZone();
+        } else {
+            AGConnectAuth.getInstance().signInAnonymously()
+                    .addOnSuccessListener(signInResult -> {
+                        Log.i(TAG, "signInAnonymously success " + signInResult.getUser().getUid());
+                        mAGConnectUser = signInResult.getUser();
+                        mCloudDBHelper.openCloudDbZone();
+                    }).addOnFailureListener(e -> Log.e(TAG, e.getMessage(), e));
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
@@ -70,10 +90,12 @@ public class LoginActivity extends AppCompatActivity {
         if (requestCode == SIGN_IN_REQUEST_CODE) {
             Task<AuthAccount> authAccountTask = AccountAuthManager.parseAuthResultFromIntent(data);
             authAccountTask.addOnSuccessListener(authAccount -> {
-                Log.i(TAG, "authAccountTask: " + authAccount.getUnionId());
+                Log.i(TAG, "authAccountTask: signIn via AccountKit success" +
+                        authAccount.getUnionId());
                 mHiAnalytics.setUserId(authAccount.getUnionId());
 
                 Intent intent = new Intent(this, MainActivity.class);
+                intent.putExtra("userId", authAccount.getUnionId());
                 startActivity(intent);
             }).addOnFailureListener(e -> Log.e(TAG, "authAccountTask: " + e.getMessage(), e));
         }
@@ -93,7 +115,7 @@ public class LoginActivity extends AppCompatActivity {
 
             if (!isPermissionGranted) {
                 Toast.makeText(this, "Permission(s) denied! " +
-                        "You must give necessary permissions for this demo app to run properly.",
+                                "You must give necessary permissions for this demo app to run properly.",
                         Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(this, "Permission(s) granted! ", Toast.LENGTH_SHORT).show();

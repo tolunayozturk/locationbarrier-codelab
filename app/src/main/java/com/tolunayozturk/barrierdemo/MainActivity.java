@@ -29,6 +29,7 @@ import com.huawei.hms.kit.awareness.barrier.LocationBarrier;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -39,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private LocationBarrierReceiver mBarrierReceiver;
     HiAnalyticsInstance mHiAnalytics;
 
+    String userId;
     double latitude = 41.02456;
     double longitude = 28.85843;
     double radius = 250;
@@ -56,7 +58,10 @@ public class MainActivity extends AppCompatActivity {
 
         mHiAnalytics = HiAnalytics.getInstance(this);
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        userId = getIntent().getStringExtra("userId");
+
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             printLog("Permission(s) denied!");
             return;
         }
@@ -72,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
         Awareness.getBarrierClient(this).queryBarriers(BarrierQueryRequest.all())
                 .addOnSuccessListener(barrierQueryResponse -> {
                     for (String l : barrierQueryResponse.getBarrierStatusMap().getBarrierLabels()) {
+                        // TODO: Do not remove a barrier that already exists
                         removeBarrier(l);
                     }
 
@@ -80,14 +86,16 @@ public class MainActivity extends AppCompatActivity {
                     AwarenessBarrier exitBarrier = LocationBarrier.exit(
                             latitude, longitude, radius);
 
+                    // TODO: Add a barrier if it does not exist
                     addBarrier(this, ENTER_BARRIER_LABEL, enterBarrier, mPendingIntent);
                     addBarrier(this, EXIT_BARRIER_LABEL, exitBarrier, mPendingIntent);
                 }).addOnFailureListener(e -> Log.e(TAG, e.getMessage(), e));
 
+        // TODO: Remove this test event before publishing
         // Test event
-//        Bundle bundle = new Bundle();
-//        bundle.putString("test_key", "test_value");
-//        mHiAnalytics.onEvent("TEST_EVENT", bundle);
+        Bundle bundle = new Bundle();
+        bundle.putString("test_key", "test_value");
+        mHiAnalytics.onEvent("TEST_EVENT", bundle);
     }
 
     private void addBarrier(Context context, final String label,
@@ -154,9 +162,17 @@ public class MainActivity extends AppCompatActivity {
                         printLog("Length of stay: " + elapsedMillis / 1000 + " seconds");
                         Log.e(TAG, "Length of stay: " + elapsedMillis);
 
+                        // Send lengthOfStay via a custom event to Analytics
                         Bundle bundle = new Bundle();
                         bundle.putString("length_of_stay", String.valueOf(elapsedMillis / 1000));
                         mHiAnalytics.onEvent("LENGTH_OF_STAY", bundle);
+
+                        // Send lengthOfStay to CloudDB
+                        User user = new User();
+                        user.setId(UUID.randomUUID().toString());
+                        user.setUserId(userId);
+                        user.setLengthOfStay(String.valueOf(elapsedMillis / 1000));
+                        CloudDBHelper.getInstance(getApplicationContext()).upsertUser(user);
                     }
                     break;
                 case BarrierStatus.FALSE:
