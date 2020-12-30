@@ -14,6 +14,8 @@ import android.widget.Toast;
 
 import com.huawei.agconnect.auth.AGConnectAuth;
 import com.huawei.agconnect.auth.AGConnectUser;
+import com.huawei.agconnect.auth.SignInResult;
+import com.huawei.hmf.tasks.OnSuccessListener;
 import com.huawei.hmf.tasks.Task;
 import com.huawei.hms.analytics.HiAnalytics;
 import com.huawei.hms.analytics.HiAnalyticsInstance;
@@ -50,20 +52,6 @@ public class LoginActivity extends AppCompatActivity {
 
         mCloudDBHelper = CloudDBHelper.getInstance(this);
 
-        // Anonymous sign-in for CloudDB
-        mAGConnectUser = AGConnectAuth.getInstance().getCurrentUser();
-        if (mAGConnectUser != null) {
-            Log.i(TAG, "signIn via AuthService success " + mAGConnectUser.getUid());
-            mCloudDBHelper.openCloudDbZone();
-        } else {
-            AGConnectAuth.getInstance().signInAnonymously()
-                    .addOnSuccessListener(signInResult -> {
-                        Log.i(TAG, "signInAnonymously success " + signInResult.getUser().getUid());
-                        mAGConnectUser = signInResult.getUser();
-                        mCloudDBHelper.openCloudDbZone();
-                    }).addOnFailureListener(e -> Log.e(TAG, e.getMessage(), e));
-        }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
                             Manifest.permission.ACCESS_BACKGROUND_LOCATION},
@@ -93,6 +81,19 @@ public class LoginActivity extends AppCompatActivity {
                 Log.i(TAG, "authAccountTask: signIn via AccountKit success" +
                         authAccount.getUnionId());
                 mHiAnalytics.setUserId(authAccount.getUnionId());
+
+                mAGConnectUser = AGConnectAuth.getInstance().getCurrentUser();
+                if (mAGConnectUser != null) {
+                    Log.i(TAG, "signIn via AuthService success " + mAGConnectUser.getUid());
+                    mCloudDBHelper.openCloudDbZone();
+                } else {
+                    AGConnectAuth.getInstance().signInAnonymously()
+                            .addOnSuccessListener(signInResult -> {
+                                Log.i(TAG, "signInAnonymously success " + signInResult.getUser().getUid());
+                                mAGConnectUser = signInResult.getUser();
+                                mCloudDBHelper.openCloudDbZone();
+                            }).addOnFailureListener(e -> Log.e(TAG, e.getMessage(), e));
+                }
 
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.putExtra("userId", authAccount.getUnionId());

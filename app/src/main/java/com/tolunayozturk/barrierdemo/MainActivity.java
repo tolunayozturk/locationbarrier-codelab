@@ -76,19 +76,20 @@ public class MainActivity extends AppCompatActivity {
 
         Awareness.getBarrierClient(this).queryBarriers(BarrierQueryRequest.all())
                 .addOnSuccessListener(barrierQueryResponse -> {
-                    for (String l : barrierQueryResponse.getBarrierStatusMap().getBarrierLabels()) {
-                        // TODO: Do not remove a barrier that already exists
-                        removeBarrier(l);
-                    }
-
                     AwarenessBarrier enterBarrier = LocationBarrier.enter(
                             latitude, longitude, radius);
                     AwarenessBarrier exitBarrier = LocationBarrier.exit(
                             latitude, longitude, radius);
 
-                    // TODO: Add a barrier if it does not exist
-                    addBarrier(this, ENTER_BARRIER_LABEL, enterBarrier, mPendingIntent);
-                    addBarrier(this, EXIT_BARRIER_LABEL, exitBarrier, mPendingIntent);
+                    if (!barrierQueryResponse.getBarrierStatusMap().getBarrierLabels()
+                            .contains(ENTER_BARRIER_LABEL)) {
+                        addBarrier(this, ENTER_BARRIER_LABEL, enterBarrier, mPendingIntent);
+                    }
+
+                    if (!barrierQueryResponse.getBarrierStatusMap().getBarrierLabels()
+                            .contains(EXIT_BARRIER_LABEL)) {
+                        addBarrier(this, EXIT_BARRIER_LABEL, exitBarrier, mPendingIntent);
+                    }
                 }).addOnFailureListener(e -> Log.e(TAG, e.getMessage(), e));
 
         // TODO: Remove this test event before publishing
@@ -122,9 +123,7 @@ public class MainActivity extends AppCompatActivity {
         Awareness.getBarrierClient(this)
                 .updateBarriers(builder.build()).addOnSuccessListener(aVoid -> {
             Log.i(TAG, "removeBarrier: success");
-        }).addOnFailureListener(e -> {
-            Log.e(TAG, "removeBarrier: " + e.getMessage(), e);
-        });
+        }).addOnFailureListener(e -> Log.e(TAG, "removeBarrier: " + e.getMessage(), e));
     }
 
     private void printLog(String msg) {
