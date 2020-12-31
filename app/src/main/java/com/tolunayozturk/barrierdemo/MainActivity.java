@@ -30,6 +30,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -81,22 +82,32 @@ public class MainActivity extends AppCompatActivity {
                     AwarenessBarrier exitBarrier = LocationBarrier.exit(
                             latitude, longitude, radius);
 
-                    if (!barrierQueryResponse.getBarrierStatusMap().getBarrierLabels()
+                    if (barrierQueryResponse.getBarrierStatusMap().getBarrierLabels()
                             .contains(ENTER_BARRIER_LABEL)) {
-                        addBarrier(this, ENTER_BARRIER_LABEL, enterBarrier, mPendingIntent);
+                        removeBarrier(ENTER_BARRIER_LABEL, res -> {
+                            if (res) {
+                                addBarrier(this, ENTER_BARRIER_LABEL, enterBarrier,
+                                        mPendingIntent);
+                            }
+                        });
                     }
 
-                    if (!barrierQueryResponse.getBarrierStatusMap().getBarrierLabels()
+                    if (barrierQueryResponse.getBarrierStatusMap().getBarrierLabels()
                             .contains(EXIT_BARRIER_LABEL)) {
-                        addBarrier(this, EXIT_BARRIER_LABEL, exitBarrier, mPendingIntent);
+                        removeBarrier(EXIT_BARRIER_LABEL, res -> {
+                            if (res) {
+                                addBarrier(this, EXIT_BARRIER_LABEL, exitBarrier,
+                                        mPendingIntent);
+                            }
+                        });
                     }
                 }).addOnFailureListener(e -> Log.e(TAG, e.getMessage(), e));
 
         // TODO: Remove this test event before publishing
         // Test event
-        Bundle bundle = new Bundle();
-        bundle.putString("test_key", "test_value");
-        mHiAnalytics.onEvent("TEST_EVENT", bundle);
+//        Bundle bundle = new Bundle();
+//        bundle.putString("test_key", "test_value");
+//        mHiAnalytics.onEvent("TEST_EVENT", bundle);
     }
 
     private void addBarrier(Context context, final String label,
@@ -116,14 +127,18 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    private void removeBarrier(String label) {
+    private void removeBarrier(String label, Consumer<Boolean> result) {
         BarrierUpdateRequest.Builder builder = new BarrierUpdateRequest.Builder();
         builder.deleteBarrier(label);
 
         Awareness.getBarrierClient(this)
                 .updateBarriers(builder.build()).addOnSuccessListener(aVoid -> {
             Log.i(TAG, "removeBarrier: success");
-        }).addOnFailureListener(e -> Log.e(TAG, "removeBarrier: " + e.getMessage(), e));
+            result.accept(true);
+        }).addOnFailureListener(e -> {
+            Log.e(TAG, "removeBarrier: " + e.getMessage(), e);
+            result.accept(false);
+        });
     }
 
     private void printLog(String msg) {
