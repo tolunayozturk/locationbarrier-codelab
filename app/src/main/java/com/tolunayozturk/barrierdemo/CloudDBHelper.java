@@ -6,8 +6,11 @@ import android.util.Log;
 import com.huawei.agconnect.cloud.database.AGConnectCloudDB;
 import com.huawei.agconnect.cloud.database.CloudDBZone;
 import com.huawei.agconnect.cloud.database.CloudDBZoneConfig;
+import com.huawei.agconnect.cloud.database.CloudDBZoneQuery;
 import com.huawei.agconnect.cloud.database.exceptions.AGConnectCloudDBException;
 import com.huawei.hmf.tasks.Task;
+
+import java.util.function.Consumer;
 
 public class CloudDBHelper {
     private static final String TAG = CloudDBHelper.class.getSimpleName();
@@ -40,17 +43,21 @@ public class CloudDBHelper {
         return instance;
     }
 
-    public void openCloudDbZone() {
+    public void openCloudDbZone(Consumer<Boolean> result) {
         if (mCloudDBZone == null) {
             Task<CloudDBZone> openDBZoneTask = mCloudDB.openCloudDBZone2(mConfig, true);
             openDBZoneTask.addOnSuccessListener(cloudDBZone -> {
                 Log.i(TAG, "openCloudDbZone: success");
                 mCloudDBZone = cloudDBZone;
-            }).addOnFailureListener(e -> Log.e(TAG, "openCloudDbZone: " + e.getMessage(), e));
+                result.accept(true);
+            }).addOnFailureListener(e -> {
+                Log.e(TAG, "openCloudDbZone: " + e.getMessage(), e);
+                result.accept(false);
+            });
         }
     }
 
-    public void upsertUser(User user) {
+    public void upsertUser(User user, Consumer<Boolean> result) {
         if (mCloudDBZone == null) {
             Log.w(TAG, "mCloudDBZone is null");
             return;
@@ -59,6 +66,29 @@ public class CloudDBHelper {
         mCloudDBZone.executeUpsert(user)
                 .addOnSuccessListener(cloudDBZoneResult -> {
                     Log.i(TAG, "upsertUser: " + user.getUserId() + " success");
-                }).addOnFailureListener(e -> Log.e(TAG, "upsertUser: " + e.getMessage(), e));
+                    result.accept(true);
+                }).addOnFailureListener(e -> {
+                    Log.e(TAG, "upsertUser: " + e.getMessage(), e);
+                    result.accept(false);
+                });
+    }
+
+    public void queryAverage(Consumer<Double> result) {
+        if (mCloudDBZone == null) {
+            Log.w(TAG, "mCloudDBZone is null");
+            return;
+        }
+
+        CloudDBZoneQuery<User> query = CloudDBZoneQuery.where(User.class);
+        Task<Double> queryTask = mCloudDBZone.executeAverageQuery(query, "lengthOfStay",
+                CloudDBZoneQuery.CloudDBZoneQueryPolicy.POLICY_QUERY_FROM_CLOUD_ONLY);
+
+        queryTask.addOnSuccessListener(cloudDBZoneResult -> {
+            Log.d(TAG, "queryAverage: success " + cloudDBZoneResult);
+            result.accept(cloudDBZoneResult);
+        }).addOnFailureListener(e -> {
+            Log.e(TAG, "queryAverage: " + e.getMessage(), e);
+            result.accept(null);
+        });
     }
 }

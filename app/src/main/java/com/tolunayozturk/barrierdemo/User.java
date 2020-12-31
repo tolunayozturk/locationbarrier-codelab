@@ -24,7 +24,7 @@ public final class User extends CloudDBZoneObject {
 
     private String userId;
 
-    private String lengthOfStay;
+    private Double lengthOfStay;
 
     public User() {
         super(User.class);
@@ -47,11 +47,11 @@ public final class User extends CloudDBZoneObject {
         return userId;
     }
 
-    public void setLengthOfStay(String lengthOfStay) {
+    public void setLengthOfStay(Double lengthOfStay) {
         this.lengthOfStay = lengthOfStay;
     }
 
-    public String getLengthOfStay() {
+    public Double getLengthOfStay() {
         return lengthOfStay;
     }
 

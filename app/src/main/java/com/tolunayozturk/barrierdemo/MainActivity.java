@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private PendingIntent mPendingIntent;
     private LocationBarrierReceiver mBarrierReceiver;
     HiAnalyticsInstance mHiAnalytics;
+    CloudDBHelper mCloudDBHelper;
 
     String userId;
     double latitude = 41.02456;
@@ -58,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
         mChronometer = findViewById(R.id.chronometer);
 
         mHiAnalytics = HiAnalytics.getInstance(this);
+        mCloudDBHelper = CloudDBHelper.getInstance(this);
 
         userId = getIntent().getStringExtra("userId");
 
@@ -90,6 +92,9 @@ public class MainActivity extends AppCompatActivity {
                                         mPendingIntent);
                             }
                         });
+                    } else {
+                        addBarrier(this, ENTER_BARRIER_LABEL, enterBarrier,
+                                mPendingIntent);
                     }
 
                     if (barrierQueryResponse.getBarrierStatusMap().getBarrierLabels()
@@ -100,6 +105,9 @@ public class MainActivity extends AppCompatActivity {
                                         mPendingIntent);
                             }
                         });
+                    } else {
+                        addBarrier(this, EXIT_BARRIER_LABEL, exitBarrier,
+                                mPendingIntent);
                     }
                 }).addOnFailureListener(e -> Log.e(TAG, e.getMessage(), e));
 
@@ -185,8 +193,14 @@ public class MainActivity extends AppCompatActivity {
                         User user = new User();
                         user.setId(UUID.randomUUID().toString());
                         user.setUserId(userId);
-                        user.setLengthOfStay(String.valueOf(elapsedMillis / 1000));
-                        CloudDBHelper.getInstance(getApplicationContext()).upsertUser(user);
+                        user.setLengthOfStay(elapsedMillis / 1000);
+                        mCloudDBHelper.upsertUser(user, res -> {
+                            if (res) {
+                                mCloudDBHelper.queryAverage(avgResult -> {
+                                    printLog("Average length of stay: " + avgResult);
+                                });
+                            }
+                        });
                     }
                     break;
                 case BarrierStatus.FALSE:

@@ -85,19 +85,27 @@ public class LoginActivity extends AppCompatActivity {
                 mAGConnectUser = AGConnectAuth.getInstance().getCurrentUser();
                 if (mAGConnectUser != null) {
                     Log.i(TAG, "signIn via AuthService success " + mAGConnectUser.getUid());
-                    mCloudDBHelper.openCloudDbZone();
+                    mCloudDBHelper.openCloudDbZone(res -> {
+                        if (res) {
+                            Intent intent = new Intent(this, MainActivity.class);
+                            intent.putExtra("userId", authAccount.getUnionId());
+                            startActivity(intent);
+                        }
+                    });
                 } else {
                     AGConnectAuth.getInstance().signInAnonymously()
                             .addOnSuccessListener(signInResult -> {
                                 Log.i(TAG, "signInAnonymously success " + signInResult.getUser().getUid());
                                 mAGConnectUser = signInResult.getUser();
-                                mCloudDBHelper.openCloudDbZone();
+                                mCloudDBHelper.openCloudDbZone(res -> {
+                                    if (res) {
+                                        Intent intent = new Intent(this, MainActivity.class);
+                                        intent.putExtra("userId", authAccount.getUnionId());
+                                        startActivity(intent);
+                                    }
+                                });
                             }).addOnFailureListener(e -> Log.e(TAG, e.getMessage(), e));
                 }
-
-                Intent intent = new Intent(this, MainActivity.class);
-                intent.putExtra("userId", authAccount.getUnionId());
-                startActivity(intent);
             }).addOnFailureListener(e -> Log.e(TAG, "authAccountTask: " + e.getMessage(), e));
         }
     }
