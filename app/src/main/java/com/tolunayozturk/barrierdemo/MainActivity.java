@@ -64,7 +64,10 @@ public class MainActivity extends AppCompatActivity {
         userId = getIntent().getStringExtra("userId");
 
         if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED) {
             printLog("Permission(s) denied!");
             return;
         }
@@ -110,12 +113,6 @@ public class MainActivity extends AppCompatActivity {
                                 mPendingIntent);
                     }
                 }).addOnFailureListener(e -> Log.e(TAG, e.getMessage(), e));
-
-        // TODO: Remove this test event before publishing
-        // Test event
-//        Bundle bundle = new Bundle();
-//        bundle.putString("test_key", "test_value");
-//        mHiAnalytics.onEvent("TEST_EVENT", bundle);
     }
 
     private void addBarrier(Context context, final String label,
