@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.application'
+    id("org.sonarqube") version "3.0"
 }
 
 android {
@@ -33,6 +34,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.material:material:1.2.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    testImplementation 'junit:junit:4.+'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
     implementation 'com.huawei.agconnect:agconnect-core:1.4.2.301'
     implementation 'com.huawei.hms:awareness:1.0.7.303'
@@ -46,4 +50,14 @@ dependencies {
 apply plugin: 'com.huawei.agconnect'
 repositories {
     mavenCentral()
+}
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", "com.tolunayozturk.barrierdemo" // it should be same as website projectKey         property "sonar.projectName", "<proj_name>" //web UI name         property "sonar.login", "<your_token>"
+        property "sonar.projectName", "Codelab Location Barrier" //web UI name
+        property "sonar.login", "191c5afa7fae92491dc52cc1ff0f41375d07bbb2"
+        property "sonar.host.url", "http://10.216.72.212:9000"
+        property "sonar.projectVersion", android.defaultConfig.versionName
+    }
 }

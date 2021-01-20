@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020. Huawei Technologies Co., Ltd. All rights reserved.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package com.tolunayozturk.barrierdemo;
 
 import android.Manifest;
@@ -60,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
 
         mHiAnalytics = HiAnalytics.getInstance(this);
         mCloudDBHelper = CloudDBHelper.getInstance(this);
-
         userId = getIntent().getStringExtra("userId");
 
         if (ActivityCompat.checkSelfPermission(this,
@@ -113,6 +128,11 @@ public class MainActivity extends AppCompatActivity {
                                 mPendingIntent);
                     }
                 }).addOnFailureListener(e -> Log.e(TAG, e.getMessage(), e));
+
+//        // Test event
+//        Bundle bundle = new Bundle();
+//        bundle.putString("test_key2", "test_value2");
+//        mHiAnalytics.onEvent("TEST_EVENT2", bundle);
     }
 
     private void addBarrier(Context context, final String label,
@@ -183,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
 
                         // Send lengthOfStay via a custom event to Analytics
                         Bundle bundle = new Bundle();
-                        bundle.putString("length_of_stay", String.valueOf(elapsedMillis / 1000));
+                        bundle.putDouble("length_of_stay", elapsedMillis / 1000);
                         mHiAnalytics.onEvent("LENGTH_OF_STAY", bundle);
 
                         // Send lengthOfStay to CloudDB
